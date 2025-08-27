@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # Golang REST API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ENV=development
+      - PORT=8080
+      - MONGODB_URI=mongodb://mongodb:27017/pets_search
+      - REDIS_URL=redis://redis:6379
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_USE_SSL=false
+      - MINIO_BUCKET=pets-photos
+    depends_on:
+      - mongodb
+      - redis
+      - minio
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    networks:
+      - pets-network
+
+  # MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: pets_mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=pets_search
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    restart: unless-stopped
+    networks:
+      - pets-network
+
+  # Redis (для кешування та сесій)
+  redis:
+    image: redis:7.2-alpine
+    container_name: pets_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - pets-network
+
+  # MinIO (S3-сумісне сховище)
+  minio:
+    image: minio/minio:latest
+    container_name: pets_minio
+    ports:
+      - "9000:9000" # API
+      - "9090:9090" # Console
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    command: server /data --console-address ":9090"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+    networks:
+      - pets-network
+
+  # MinIO Client для ініціалізації bucket
+  minio-init:
+    image: minio/mc:latest
+    container_name: pets_minio_init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c " sleep 10; /usr/bin/mc alias set minio http://minio:9000 minioadmin minioadmin; /usr/bin/mc mb minio/pets-photos --ignore-existing; /usr/bin/mc policy set public minio/pets-photos; exit 0; "
+    networks:
+      - pets-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+  minio_data:
+
+
+networks:
+  pets-network:
+    driver: bridge
