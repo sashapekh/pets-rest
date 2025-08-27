@@ -29,7 +29,7 @@ pets_search/rest/
 - **MinIO** - порти 9000 (API), 9090 (Console)
 
 ### 📦 Залежності Go
-- ✅ Fiber v2 - HTTP framework
+- ✅ Fiber v3 - HTTP framework
 - ✅ MongoDB Driver - для роботи з базою
 - ✅ Redis Client - для кешування  
 - ✅ MinIO SDK - для файлів
@@ -63,7 +63,7 @@ curl http://localhost:8080/healthz
 
 ### 3. Доступ до сервісів
 - **API**: http://localhost:8080
-- **MinIO Console**: http://localhost:9090 (minioadmin/minioadmin)  
+- **MinIO Console**: http://localhost:9091 (minioadmin/minioadmin)  
 - **MongoDB**: mongodb://admin:password@localhost:27017/pets_search
 
 ### 4. Розробка

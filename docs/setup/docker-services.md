@@ -149,7 +149,7 @@ minio:
   image: minio/minio:latest
   container_name: pets_minio
   ports:
-    - "9000:9000"  # API
+    - "9001:9000"  # API
     - "9090:9090"  # Console
   environment:
     - MINIO_ROOT_USER=minioadmin
@@ -160,20 +160,20 @@ minio:
 ```
 
 ### Особливості
-- **API порт**: 9000 (S3-сумісний API)
+- **API порт**: 9001 (S3-сумісний API)
 - **Console порт**: 9090 (веб-інтерфейс)
 - **Credentials**: minioadmin/minioadmin
 - **Persistence**: minio_data volume
 
 ### Доступ
-- **API**: http://localhost:9000
+- **API**: http://localhost:9001
 - **Console**: http://localhost:9090
 - **Login**: minioadmin / minioadmin
 
 ### MinIO Client (MC)
 ```bash
 # Налаштування alias
-mc alias set local http://localhost:9000 minioadmin minioadmin
+mc alias set local http://localhost:9001 minioadmin minioadmin
 
 # Список buckets
 mc ls local/
@@ -279,7 +279,7 @@ docker compose exec mongodb mongosh --eval "db.adminCommand('ping')"
 docker compose exec redis redis-cli ping
 
 # MinIO
-curl http://localhost:9000/minio/health/live
+curl http://localhost:9001/minio/health/live
 ```
 
 ## 🔄 Lifecycle управління

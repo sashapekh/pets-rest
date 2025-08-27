@@ -61,8 +61,8 @@ open http://localhost:8080/healthz
 | API | 8080 | http://localhost:8080 | - |
 | MongoDB | 27017 | localhost:27017 | admin/password |
 | Redis | 6379 | localhost:6379 | - |
-| MinIO API | 9000 | http://localhost:9000 | minioadmin/minioadmin |
-| MinIO Console | 9090 | http://localhost:9090 | minioadmin/minioadmin |
+| MinIO API | 9001 | http://localhost:9001 | minioadmin/minioadmin |
+| MinIO Console | 9091 | http://localhost:9091 | minioadmin/minioadmin |
 
 ### Управління сервісами
 ```bash
@@ -157,7 +157,7 @@ docker compose up -d mongodb
 ## 🗂️ MinIO налаштування
 
 ### Доступ до консолі
-- URL: http://localhost:9090
+- URL: http://localhost:9091
 - Логін: `minioadmin`
 - Пароль: `minioadmin`
 
@@ -188,7 +188,7 @@ MONGODB_URI=mongodb://admin:password@localhost:27017/pets_search?authSource=admi
 REDIS_URL=redis://localhost:6379
 
 # MinIO
-MINIO_ENDPOINT=localhost:9000
+MINIO_ENDPOINT=localhost:9001
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
 MINIO_USE_SSL=false

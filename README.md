@@ -36,7 +36,7 @@ curl http://localhost:8080/healthz
 Після запуску доступні наступні сервіси:
 
 - **API**: http://localhost:8080
-- **MinIO Console**: http://localhost:9090 (minioadmin/minioadmin)
+- **MinIO Console**: http://localhost:9091 (minioadmin/minioadmin)
 - **MongoDB**: localhost:27017 (admin/password)
 - **Redis**: localhost:6379
 
@@ -121,7 +121,7 @@ go mod tidy
 
 ## 📦 Залежності
 
-- [Fiber v2](https://github.com/gofiber/fiber) - HTTP framework
+- [Fiber v3](https://github.com/gofiber/fiber) - HTTP framework
 - [MongoDB Go Driver](https://github.com/mongodb/mongo-go-driver) - MongoDB драйвер
 - [Redis Go Client](https://github.com/go-redis/redis) - Redis клієнт
 - [MinIO Go SDK](https://github.com/minio/minio-go) - S3-сумісний клієнт

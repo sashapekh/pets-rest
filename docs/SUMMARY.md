@@ -23,10 +23,10 @@ pets_search/rest/
 
 ### 🐳 Docker Compose конфігурація
 ```yaml
-✅ api          # Golang REST API (Fiber v2) - порт 8080
+✅ api          # Golang REST API (Fiber v3) - порт 8080
 ✅ mongodb      # MongoDB 7.0 - порт 27017
 ✅ redis        # Redis 7.2 - порт 6379  
-✅ minio        # MinIO S3 - порти 9000/9090
+✅ minio        # MinIO S3 - порти 9001/9091
 ✅ minio-init   # Автоматична ініціалізація bucket
 ✅ pets-network # Внутрішня мережа
 ✅ volumes      # Постійне зберігання даних
@@ -79,13 +79,13 @@ curl http://localhost:8080/healthz
 | Сервіс | URL | Логін/Пароль |
 |--------|-----|--------------|
 | API | http://localhost:8080 | - |
-| MinIO Console | http://localhost:9090 | minioadmin/minioadmin |
+| MinIO Console | http://localhost:9091 | minioadmin/minioadmin |
 | MongoDB | mongodb://localhost:27017 | admin/password |
 | Redis | redis://localhost:6379 | - |
 
 ## 🎯 Готові базові компоненти
 
-### HTTP Сервер (Fiber v2)
+### HTTP Сервер (Fiber v3)
 ```go
 ✅ Middleware: CORS, Logger, Recover
 ✅ Routes структура: /auth, /api/v1, /p
