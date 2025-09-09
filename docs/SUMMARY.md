@@ -25,7 +25,7 @@ pets_search/rest/
 ```yaml
 ✅ api          # Golang REST API (Fiber v3) - порт 8080
 ✅ mongodb      # MongoDB 7.0 - порт 27017
-✅ redis        # Redis 7.2 - порт 6379  
+✅ redis        # Redis 8.2 - порт 6379
 ✅ minio        # MinIO S3 - порти 9001/9091
 ✅ minio-init   # Автоматична ініціалізація bucket
 ✅ pets-network # Внутрішня мережа

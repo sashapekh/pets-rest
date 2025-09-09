@@ -3,14 +3,31 @@ package main
 import (
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/gofiber/fiber/v3/middleware/recover"
+	"github.com/gofiber/fiber/v3/middleware/session"
+
+	"pets_rest/internal/config"
+	"pets_rest/internal/database"
+	"pets_rest/internal/routes"
 )
 
 func main() {
+	// Load configuration
+	cfg := config.Load()
+
+	// Connect to database
+	db, err := database.Connect(cfg)
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+	defer db.Close()
+
 	// Create Fiber app
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c fiber.Ctx, err error) error {
@@ -33,56 +50,26 @@ func main() {
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		AllowCredentials: false,
 	}))
+	app.Use(session.New())
+	// Initialize routes
+	routes.SetupRoutes(app, db, cfg)
 
-	// Health check
-	app.Get("/healthz", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"status":  "ok",
-			"message": "Pets Search API is running",
-		})
-	})
+	// Start server in goroutine
+	go func() {
+		log.Printf("🚀 Server starting on port %s", cfg.Port)
+		if err := app.Listen(":" + cfg.Port); err != nil {
+			log.Printf("Failed to start server: %v", err)
+		}
+	}()
 
-	// API routes
-	api := app.Group("/api/v1")
+	// Wait for interrupt signal to gracefully shutdown the server
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
 
-	// Auth routes
-	auth := app.Group("/auth")
-	auth.Post("/magic-link", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Magic link endpoint - not implemented yet"})
-	})
-	auth.Post("/magic-link/verify", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Magic link verify endpoint - not implemented yet"})
-	})
-
-	// Listings routes
-	listings := api.Group("/listings")
-	listings.Get("/", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Get listings - not implemented yet"})
-	})
-	listings.Post("/", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Create listing - not implemented yet"})
-	})
-	listings.Get("/:id", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Get listing by ID - not implemented yet"})
-	})
-	listings.Put("/:id", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Update listing - not implemented yet"})
-	})
-	listings.Delete("/:id", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Delete listing - not implemented yet"})
-	})
-
-	// Public pages
-	app.Get("/p/:slug", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"message": "Public page - not implemented yet"})
-	})
-
-	// Get port from environment or default to 8080
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	log.Println("Shutting down server...")
+	if err := app.Shutdown(); err != nil {
+		log.Printf("Server forced to shutdown: %v", err)
 	}
-
-	log.Printf("Starting server on port %s", port)
-	log.Fatal(app.Listen(":" + port))
+	log.Println("Server exited")
 }

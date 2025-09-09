@@ -14,7 +14,7 @@ type Config struct {
 	Port string
 
 	// Database
-	MongoDBURI string
+	DatabaseURL string
 
 	// Redis
 	RedisURL string
@@ -43,6 +43,11 @@ type Config struct {
 	// File Upload
 	MaxFileSize      string
 	AllowedFileTypes string
+
+	// Google OAuth2
+	GoogleClientID     string
+	GoogleClientSecret string
+	GoogleRedirectURL  string
 }
 
 func Load() *Config {
@@ -55,8 +60,8 @@ func Load() *Config {
 		Env:  getEnv("ENV", "development"),
 		Port: getEnv("PORT", "8080"),
 
-		MongoDBURI: getEnv("MONGODB_URI", "mongodb://admin:password@localhost:27017/pets_search?authSource=admin"),
-		RedisURL:   getEnv("REDIS_URL", "redis://localhost:6379"),
+		DatabaseURL: getEnv("DATABASE_URL", "postgres://pets_user:pets_password@localhost:5432/pets_search?sslmode=disable"),
+		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379"),
 
 		MinIOEndpoint:  getEnv("MINIO_ENDPOINT", "localhost:9000"),
 		MinIOAccessKey: getEnv("MINIO_ACCESS_KEY", "minioadmin"),
@@ -75,8 +80,11 @@ func Load() *Config {
 		BaseURL:     getEnv("BASE_URL", "http://localhost:8080"),
 		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3000"),
 
-		MaxFileSize:      getEnv("MAX_FILE_SIZE", "10MB"),
-		AllowedFileTypes: getEnv("ALLOWED_FILE_TYPES", "jpg,jpeg,png,gif,pdf"),
+		MaxFileSize:        getEnv("MAX_FILE_SIZE", "10MB"),
+		AllowedFileTypes:   getEnv("ALLOWED_FILE_TYPES", "jpg,jpeg,png,gif,pdf"),
+		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
+		GoogleRedirectURL:  getEnv("GOOGLE_REDIRECT_URL", "http://localhost:8080/api/v1/auth/google/callback"),
 	}
 
 	return cfg

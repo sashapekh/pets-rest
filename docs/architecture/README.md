@@ -58,52 +58,52 @@ web/                       # Веб ресурси
 3. **Interface Segregation** - маленькі, специфічні інтерфейси
 4. **Clean Code** - читабельний та підтримуваний код
 
-## 🗄️ Схема бази даних (MongoDB)
+## 🗄️ Схема бази даних (PostgreSQL)
 
-### Колекція `users`
-```javascript
-{
-  _id: ObjectId,
-  email: String,           // required, unique
-  phone: String,           // optional
-  name: String,            // optional
-  created_at: Date,        // required
-  updated_at: Date         // optional
-}
+### Таблиця `users`
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    phone VARCHAR(20),
+    name VARCHAR(100),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ
+);
 ```
 
-### Колекція `listings`
-```javascript
-{
-  _id: ObjectId,
-  user_id: ObjectId,       // required, ref: users
-  type: String,            // required: "lost" | "found" | "adopt"
-  title: String,           // required
-  description: String,     // optional
-  city: String,            // optional
-  location: String,        // optional
-  contact_phone: String,   // optional
-  contact_tg: String,      // optional
-  status: String,          // required: "draft" | "active" | "archived"
-  slug: String,            // unique, for public URLs
-  images: [String],        // array of image URLs
-  created_at: Date,        // required
-  updated_at: Date         // optional
-}
+### Таблиця `listings`
+```sql
+CREATE TABLE listings (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(10) NOT NULL CHECK (type IN ('lost', 'found', 'adopt')),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    city VARCHAR(100),
+    location VARCHAR(255),
+    contact_phone VARCHAR(20),
+    contact_tg VARCHAR(100),
+    status VARCHAR(10) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'archived')),
+    slug VARCHAR(255) UNIQUE,
+    images TEXT[],
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ
+);
 ```
 
-### Колекція `events`
-```javascript
-{
-  _id: ObjectId,
-  user_id: ObjectId,       // optional, ref: users
-  listing_id: ObjectId,    // required, ref: listings
-  type: String,            // required: "view" | "qr_scan" | "contact_click"
-  payload: Object,         // optional, additional data
-  ip_address: String,      // optional
-  user_agent: String,      // optional
-  created_at: Date         // required
-}
+### Таблиця `events`
+```sql
+CREATE TABLE events (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('view', 'qr_scan', 'contact_click', 'phone_click')),
+    payload JSONB,
+    ip_address INET,
+    user_agent TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 ```
 
 ## 🔄 Потік даних
@@ -128,9 +128,10 @@ Search Query → API → Database Query → Cache → Filtered Results
 ### Backend
 - **Go 1.22+** - мова програмування
 - **Fiber v3** - HTTP framework
-- **MongoDB** - NoSQL база даних
+- **PostgreSQL** - реляційна база даних
 - **Redis** - кешування та сесії
 - **MinIO** - S3-сумісне файлове сховище
+- **golang-migrate** - міграції бази даних
 
 ### Інфраструктура
 - **Docker** - контейнеризація

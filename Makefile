@@ -17,8 +17,32 @@ build: ## Build the application
 run: ## Run the application locally
 	go run ./cmd/api
 
+dev: ## Run with auto-reload using Air
+	air
+
 test: ## Run tests
-	go test ./...
+	go test -v -race ./...
+
+test-cover: ## Run tests with coverage
+	go test -v -race -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+
+lint: ## Run linter
+	golangci-lint run
+
+lint-fix: ## Run linter with auto-fix
+	golangci-lint run --fix
+
+format: ## Format code
+	gofmt -s -w .
+	goimports -w .
+
+check: lint test ## Run linter and tests
+
+ci-setup: ## Install CI tools
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install golang.org/x/tools/cmd/goimports@latest
 
 clean: ## Clean build artifacts
 	rm -rf bin/
@@ -43,10 +67,19 @@ dev-setup: ## Setup development environment
 	@echo "Please edit .env file with your configuration"
 
 # Database operations
-db-reset: ## Reset MongoDB (warning: destroys all data!)
-	docker-compose down mongodb
-	docker volume rm pets_search_rest_mongodb_data
-	docker-compose up -d mongodb
+migrate-up: ## Run database migrations
+	go run ./cmd/migrate -up
+
+migrate-down: ## Rollback database migrations
+	go run ./cmd/migrate -down
+
+migrate-version: ## Show current migration version
+	go run ./cmd/migrate -version
+
+db-reset: ## Reset PostgreSQL (warning: destroys all data!)
+	docker-compose down postgres
+	docker volume rm pets_search_rest_postgres_data
+	docker-compose up -d postgres
 
 # Health checks
 health: ## Check if services are healthy
@@ -59,8 +92,8 @@ health: ## Check if services are healthy
 api-logs: ## Show API logs
 	docker-compose logs -f api
 
-db-logs: ## Show MongoDB logs
-	docker-compose logs -f mongodb
+db-logs: ## Show PostgreSQL logs
+	docker-compose logs -f postgres
 
 minio-logs: ## Show MinIO logs
 	docker-compose logs -f minio
