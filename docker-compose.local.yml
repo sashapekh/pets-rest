@@ -1,31 +1,4 @@
 services:
-  # Golang REST API
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      - ENV=development
-      - PORT=8080
-      - DATABASE_URL=postgres://pets_user:pets_password@postgres:5432/pets_search?sslmode=disable
-      - REDIS_URL=redis://redis:6379
-      - MINIO_ENDPOINT=minio:9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
-      - MINIO_USE_SSL=false
-      - MINIO_BUCKET=pets-photos
-    depends_on:
-      - postgres
-      - redis
-      - minio
-    volumes:
-      - .:/app
-    restart: unless-stopped
-    networks:a
-      - pets-network
-
   # PostgreSQL
   postgres:
     image: postgres:17-alpine

@@ -1,3 +1,7 @@
+include .env_make
+export
+
+DOCKER_COMPOSE = docker-compose -f $(DOCKER_COMPOSE_FILE)
 .PHONY: help build run docker-up docker-down docker-logs test clean deps
 
 # Default target
@@ -48,19 +52,22 @@ clean: ## Clean build artifacts
 	rm -rf bin/
 	go clean
 
+# Docker operations
+docker-ps:
+	$(DOCKER_COMPOSE) ps
 docker-up: ## Start all services with Docker Compose
-	docker-compose up -d
+	$(DOCKER_COMPOSE) up -d
 
 docker-down: ## Stop all Docker Compose services
-	docker-compose down
+	$(DOCKER_COMPOSE) down
 
 docker-logs: ## Show Docker Compose logs
-	docker-compose logs -f
+	$(DOCKER_COMPOSE) logs -f
 
 docker-rebuild: ## Rebuild and restart Docker services
-	docker-compose down
-	docker-compose build --no-cache
-	docker-compose up -d
+	$(DOCKER_COMPOSE) down
+	$(DOCKER_COMPOSE) build --no-cache
+	$(DOCKER_COMPOSE) up -d
 
 dev-setup: ## Setup development environment
 	cp example.env .env
@@ -77,9 +84,9 @@ migrate-version: ## Show current migration version
 	go run ./cmd/migrate -version
 
 db-reset: ## Reset PostgreSQL (warning: destroys all data!)
-	docker-compose down postgres
+	$(DOCKER_COMPOSE) down postgres
 	docker volume rm pets_search_rest_postgres_data
-	docker-compose up -d postgres
+	$(DOCKER_COMPOSE) up -d postgres
 
 # Health checks
 health: ## Check if services are healthy
