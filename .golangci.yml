@@ -1,19 +1,14 @@
 version: "2"
 
 run:
-  # timeout for running all linters
   timeout: 5m
-  # Аналізувати також тестові файли?
-  tests: true
-  # go версія (якщо потрібно)
   go: "1.25"
-  # рівень паралелізму, за потреби
+  tests: true
   concurrency: 4
+  relative-path-mode: cfg
 
 linters:
-  # Опції default: standard / all / none / fast
-  default: none
-  # Які лінтери ввімкнути
+  default: standard
   enable:
     - errcheck
     - govet
@@ -23,47 +18,24 @@ linters:
     - bodyclose
     - cyclop
     - misspell
-    - revive
-  # Які вимкнути (якщо треба)
   disable:
-    - someOtherLinterYouDontNeed
   settings:
     cyclop:
-      min-complexity: 0        # якщо мінімальна межа для complexity, приклад
-      max-complexity: 15       # твій ліміт для cyclop
-    revive:
-      confidence: 0.8
-      # можеш додати інші налаштування revive, якщо потрібно
-      # наприклад правила, severity, etc.
+      max-complexity: 15
 
 issues:
-  # які файли виключати з аналізу помилок
   exclude-files:
     - "_test\\.go"
-  # виключення по директоріях, якщо потрібно
   exclude-dirs:
     - "vendor"
     - "third_party"
-  # правила виключення (exclude-rules)
   exclude-rules:
-    # приклад: для лінтера cyclop виключити певний вид тексту
     - linters:
         - cyclop
       text: "parameter list too long"
-    # приклад: для будь-якого лінтера виключити шлях
     - path: "internal/generated/"
-  max-issues-per-linter: 0   # 0 — без обмежень, або вкажи число
-  max-same-issues: 0         # аналогічно
-
-output:
-  formats:
-    colored-line-number: {}
-    json: {}
-  print-issued-lines: true
-  print-linter-name: true
-  sort-results: true
-  path-prefix: ""
-  show-stats: true
+  max-issues-per-linter: 0
+  max-same-issues: 0
 
 formatters:
   enable:
@@ -75,10 +47,23 @@ formatters:
     goimports:
       local-prefixes: "your/project/module/path"
 
+output:
+  formats:
+    text:
+      path: stdout
+      print-issued-lines: true
+      print-linter-name: true
+    json:
+      path: "./lint-report.json"
+  sort-order:
+    - linter
+    - severity
+    - file
+  sort-results: true
+  relative-path-mode: cfg
+
 severity:
-  default-severity: "warning"
-  case-sensitive: false
+  default-severity: warning
   rules:
     - path: ".*\\.go"
-      severity: "error"
-
+      severity: error
