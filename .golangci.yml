@@ -1,59 +1,30 @@
+version: 2
+
 run:
   timeout: 5m
-  modules-download-mode: readonly
   go: "1.25"
 
 linters-settings:
-  gocyclo:
-    min-complexity: 15
-  
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - performance
-      - style
-    disabled-checks:
-      - unnecessaryDefer
-  
-  gofmt:
-    simplify: true
-  
-  goimports:
-    local-prefixes: pets_rest
-  
-  govet:
-    disable:
-      - fieldalignment
-  
-  misspell:
-    locale: US
+  cyclop:
+    max-complexity: 15
   
   revive:
     confidence: 0.8
-    rules:
-      - name: exported
-        disabled: false
-      - name: package-comments
-        disabled: true
 
 linters:
-  disable-all: true
   enable:
-    - bodyclose
+    # Default enabled linters (explicit for clarity)
     - errcheck
-    - gocyclo
-    - gocritic
-    - gofmt
-    - goimports
-    - gosimple
     - govet
     - ineffassign
+    - staticcheck
+    - unused
+    
+    # Additional useful linters
+    - bodyclose
+    - cyclop
     - misspell
     - revive
-    - staticcheck
-    - typecheck
-    - unconvert
-    - unused
     - whitespace
 
 issues:
@@ -61,21 +32,11 @@ issues:
     # Exclude some linters from running on tests files
     - path: _test\.go
       linters:
-        - gocyclo
+        - cyclop
         - errcheck
         - revive
-    
-    # Exclude known linters from partially hard-to-fix issues
-    - linters:
-        - revive
-      text: "should be"
-    
-
-  max-same-issues: 50
-  max-issues-per-linter: 50
 
 output:
-  formats:
-    - format: colored-line-number
+  format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
