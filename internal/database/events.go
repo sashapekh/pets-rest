@@ -35,7 +35,7 @@ func (r *EventRepository) Create(event *Event) error {
 }
 
 // GetByListingID retrieves events for a specific listing
-func (r *EventRepository) GetByListingID(listingID int, limit, offset int) ([]*Event, error) {
+func (r *EventRepository) GetByListingID(listingID, limit, offset int) ([]*Event, error) {
 	events := []*Event{}
 	query := `
 		SELECT id, user_id, listing_id, type, payload, ip_address, user_agent, created_at 
@@ -49,7 +49,7 @@ func (r *EventRepository) GetByListingID(listingID int, limit, offset int) ([]*E
 }
 
 // GetByUserID retrieves events for a specific user
-func (r *EventRepository) GetByUserID(userID int, limit, offset int) ([]*Event, error) {
+func (r *EventRepository) GetByUserID(userID, limit, offset int) ([]*Event, error) {
 	events := []*Event{}
 	query := `
 		SELECT id, user_id, listing_id, type, payload, ip_address, user_agent, created_at 
@@ -93,7 +93,7 @@ func (r *EventRepository) GetAnalytics(listingID int) (map[string]int, error) {
 }
 
 // GetDailyAnalytics returns daily analytics for the last N days
-func (r *EventRepository) GetDailyAnalytics(listingID int, days int) ([]map[string]interface{}, error) {
+func (r *EventRepository) GetDailyAnalytics(listingID, days int) ([]map[string]interface{}, error) {
 	query := `
 		SELECT 
 			DATE(created_at) as date,

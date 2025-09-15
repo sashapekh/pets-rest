@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"pets_rest/internal/database"
 	"time"
+
+	"pets_rest/internal/database"
 
 	"github.com/gofiber/fiber/v3"
 )

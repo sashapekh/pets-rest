@@ -10,7 +10,7 @@ import (
 )
 
 // Run executes database migrations
-func Run(databaseURL string, migrationsPath string) error {
+func Run(databaseURL, migrationsPath string) error {
 	m, err := migrate.New(
 		fmt.Sprintf("file://%s", migrationsPath),
 		databaseURL,
@@ -35,7 +35,7 @@ func Run(databaseURL string, migrationsPath string) error {
 }
 
 // Down rollbacks database migrations
-func Down(databaseURL string, migrationsPath string) error {
+func Down(databaseURL, migrationsPath string) error {
 	m, err := migrate.New(
 		fmt.Sprintf("file://%s", migrationsPath),
 		databaseURL,
@@ -55,7 +55,7 @@ func Down(databaseURL string, migrationsPath string) error {
 }
 
 // Version returns current migration version
-func Version(databaseURL string, migrationsPath string) (uint, bool, error) {
+func Version(databaseURL, migrationsPath string) (version uint, dirty bool, err error) {
 	m, err := migrate.New(
 		fmt.Sprintf("file://%s", migrationsPath),
 		databaseURL,
@@ -65,7 +65,7 @@ func Version(databaseURL string, migrationsPath string) (uint, bool, error) {
 	}
 	defer m.Close()
 
-	version, dirty, err := m.Version()
+	version, dirty, err = m.Version()
 	if err != nil {
 		return 0, false, fmt.Errorf("failed to get migration version: %w", err)
 	}

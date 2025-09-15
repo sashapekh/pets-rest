@@ -122,7 +122,7 @@ func (r *ListingRepository) Delete(id int) error {
 }
 
 // ListByUser retrieves all listings for a user
-func (r *ListingRepository) ListByUser(userID int, limit, offset int) ([]*Listing, error) {
+func (r *ListingRepository) ListByUser(userID, limit, offset int) ([]*Listing, error) {
 	listings := []*Listing{}
 	query := `
 		SELECT id, user_id, type, title, description, city, location, contact_phone, contact_tg, status, slug, images, created_at, updated_at 
