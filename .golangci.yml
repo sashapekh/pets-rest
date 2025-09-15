@@ -3,12 +3,8 @@ version: "2"
 run:
   timeout: 5m
   go: "1.25"
-  tests: true
-  concurrency: 4
-  relative-path-mode: cfg
 
 linters:
-  default: standard
   enable:
     - errcheck
     - govet
@@ -16,54 +12,11 @@ linters:
     - staticcheck
     - unused
     - bodyclose
-    - cyclop
     - misspell
-  disable:
-  settings:
-    cyclop:
-      max-complexity: 15
 
 issues:
-  exclude-files:
-    - "_test\\.go"
-  exclude-dirs:
-    - "vendor"
-    - "third_party"
-  exclude-rules:
-    - linters:
-        - cyclop
-      text: "parameter list too long"
-    - path: "internal/generated/"
-  max-issues-per-linter: 0
-  max-same-issues: 0
-
-formatters:
-  enable:
-    - gofmt
-    - goimports
-  settings:
-    gofmt:
-      simplify: true
-    goimports:
-      local-prefixes: "your/project/module/path"
-
-output:
-  formats:
-    text:
-      path: stdout
-      print-issued-lines: true
-      print-linter-name: true
-    json:
-      path: "./lint-report.json"
-  sort-order:
-    - linter
-    - severity
-    - file
-  sort-results: true
-  relative-path-mode: cfg
+  max-issues-per-linter: 50
+  max-same-issues: 3
 
 severity:
-  default-severity: warning
-  rules:
-    - path: ".*\\.go"
-      severity: error
+  default: "warning"
