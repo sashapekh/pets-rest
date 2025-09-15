@@ -1,6 +1,6 @@
-# Схема бази даних MongoDB
+# Схема бази даних PostgreSQL
 
-## 📊 Огляд колекцій
+## 📊 Огляд таблиць
 
 ```
 pets_search
@@ -9,119 +9,102 @@ pets_search
 └── events          # Аналітичні події
 ```
 
-## 👤 Колекція `users`
+## 👤 Таблиця `users`
 
-### Структура документу
-```javascript
-{
-  _id: ObjectId("507f1f77bcf86cd799439011"),
-  email: "user@example.com",
-  phone: "+380501234567",
-  name: "Іван Петренко",
-  created_at: ISODate("2024-01-01T12:00:00Z"),
-  updated_at: ISODate("2024-01-01T12:00:00Z")
-}
+### Структура таблиці
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    phone VARCHAR(20),
+    name VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE
+);
 ```
 
 ### Поля
 | Поле | Тип | Обов'язкове | Опис |
 |------|-----|-------------|------|
-| `_id` | ObjectId | ✅ | Унікальний ідентифікатор |
-| `email` | String | ✅ | Email адреса (унікальна) |
-| `phone` | String | ❌ | Номер телефону |
-| `name` | String | ❌ | Ім'я користувача |
-| `created_at` | Date | ✅ | Дата створення |
-| `updated_at` | Date | ❌ | Дата останнього оновлення |
+| `id` | SERIAL | ✅ | Унікальний ідентифікатор (автоінкремент) |
+| `email` | VARCHAR(255) | ✅ | Email адреса (унікальна) |
+| `phone` | VARCHAR(20) | ❌ | Номер телефону |
+| `name` | VARCHAR(100) | ❌ | Ім'я користувача |
+| `created_at` | TIMESTAMPTZ | ✅ | Дата створення (автоматично) |
+| `updated_at` | TIMESTAMPTZ | ❌ | Дата останнього оновлення |
 
 ### Індекси
-```javascript
-// Унікальний індекс на email
-db.users.createIndex({ email: 1 }, { unique: true })
+```sql
+-- Унікальний індекс на email (автоматично створюється)
+CREATE INDEX idx_users_email ON users(email);
 
-// Індекс на телефон
-db.users.createIndex({ phone: 1 })
+-- Індекс на телефон
+CREATE INDEX idx_users_phone ON users(phone);
 ```
 
-### Валідація
-```javascript
-{
-  $jsonSchema: {
-    bsonType: "object",
-    required: ["email", "created_at"],
-    properties: {
-      email: {
-        bsonType: "string",
-        pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
-      },
-      phone: {
-        bsonType: "string",
-        pattern: "^\\+[1-9]\\d{1,14}$"
-      },
-      name: {
-        bsonType: "string",
-        minLength: 1,
-        maxLength: 100
-      }
-    }
-  }
-}
+### Обмеження (Constraints)
+```sql
+-- Валідація email формату
+ALTER TABLE users ADD CONSTRAINT email_format 
+CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
+
+-- Валідація телефону (міжнародний формат)
+ALTER TABLE users ADD CONSTRAINT phone_format 
+CHECK (phone IS NULL OR phone ~* '^\+[1-9]\d{1,14}$');
 ```
 
-## 📋 Колекція `listings`
+## 📋 Таблиця `listings`
 
-### Структура документу
-```javascript
-{
-  _id: ObjectId("507f1f77bcf86cd799439012"),
-  user_id: ObjectId("507f1f77bcf86cd799439011"),
-  type: "lost",
-  title: "Загубився кіт Мурзик",
-  description: "Сірий кіт з білими лапками, дуже ласкавий...",
-  city: "Київ",
-  location: "Район Печерський, поблизу метро Арсенальна",
-  contact_phone: "+380501234567",
-  contact_tg: "@username",
-  status: "active",
-  slug: "lost-cat-murzik-kyiv-abc123",
-  images: [
-    "https://minio.local/pets-photos/listing_id/image1.jpg",
-    "https://minio.local/pets-photos/listing_id/image2.jpg"
-  ],
-  created_at: ISODate("2024-01-01T12:00:00Z"),
-  updated_at: ISODate("2024-01-01T13:30:00Z")
-}
+### Структура таблиці
+```sql
+CREATE TABLE listings (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(10) NOT NULL CHECK (type IN ('lost', 'found', 'adopt')),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    city VARCHAR(100),
+    location VARCHAR(255),
+    contact_phone VARCHAR(20),
+    contact_tg VARCHAR(100),
+    status VARCHAR(10) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'archived')),
+    slug VARCHAR(255) UNIQUE,
+    images TEXT[], -- Array of image URLs
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE
+);
 ```
 
 ### Поля
 | Поле | Тип | Обов'язкове | Опис |
 |------|-----|-------------|------|
-| `_id` | ObjectId | ✅ | Унікальний ідентифікатор |
-| `user_id` | ObjectId | ✅ | Посилання на користувача |
-| `type` | String | ✅ | Тип: `lost`, `found`, `adopt` |
-| `title` | String | ✅ | Заголовок оголошення |
-| `description` | String | ❌ | Детальний опис |
-| `city` | String | ❌ | Місто |
-| `location` | String | ❌ | Конкретне місце |
-| `contact_phone` | String | ❌ | Контактний телефон |
-| `contact_tg` | String | ❌ | Telegram контакт |
-| `status` | String | ✅ | Статус: `draft`, `active`, `archived` |
-| `slug` | String | ❌ | URL slug (унікальний) |
-| `images` | Array | ❌ | Масив URL зображень |
-| `created_at` | Date | ✅ | Дата створення |
-| `updated_at` | Date | ❌ | Дата останнього оновлення |
+| `id` | SERIAL | ✅ | Унікальний ідентифікатор (автоінкремент) |
+| `user_id` | INTEGER | ✅ | Посилання на користувача (FK) |
+| `type` | VARCHAR(10) | ✅ | Тип: `lost`, `found`, `adopt` |
+| `title` | VARCHAR(255) | ✅ | Заголовок оголошення |
+| `description` | TEXT | ❌ | Детальний опис |
+| `city` | VARCHAR(100) | ❌ | Місто |
+| `location` | VARCHAR(255) | ❌ | Конкретне місце |
+| `contact_phone` | VARCHAR(20) | ❌ | Контактний телефон |
+| `contact_tg` | VARCHAR(100) | ❌ | Telegram контакт |
+| `status` | VARCHAR(10) | ✅ | Статус: `draft`, `active`, `archived` |
+| `slug` | VARCHAR(255) | ❌ | URL slug (унікальний) |
+| `images` | TEXT[] | ❌ | Масив URL зображень |
+| `created_at` | TIMESTAMPTZ | ✅ | Дата створення (автоматично) |
+| `updated_at` | TIMESTAMPTZ | ❌ | Дата останнього оновлення |
 
 ### Індекси
-```javascript
-// Індекс на власника
-db.listings.createIndex({ user_id: 1 })
+```sql
+-- Індекс на власника
+CREATE INDEX idx_listings_user_id ON listings(user_id);
 
-// Індекс на тип оголошення
-db.listings.createIndex({ type: 1 })
+-- Індекс на тип оголошення
+CREATE INDEX idx_listings_type ON listings(type);
 
-// Індекс на статус
-db.listings.createIndex({ status: 1 })
+-- Індекс на статус
+CREATE INDEX idx_listings_status ON listings(status);
 
-// Унікальний індекс на slug
+-- Унікальний індекс на slug
 db.listings.createIndex({ slug: 1 }, { unique: true, sparse: true })
 
 // Індекс на місто

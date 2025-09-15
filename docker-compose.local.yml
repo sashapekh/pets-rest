@@ -1,0 +1,67 @@
+services:
+  # PostgreSQL
+  postgres:
+    image: postgres:17-alpine
+    container_name: pets_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=pets_user
+      - POSTGRES_PASSWORD=pets_password
+      - POSTGRES_DB=pets_search
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - pets-network
+
+  # Redis (для кешування та сесій)
+  redis:
+    image: redis:8.2-alpine
+    container_name: pets_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - pets-network
+
+  # MinIO (S3-сумісне сховище)
+  minio:
+    image: minio/minio:latest
+    container_name: pets_minio
+    ports:
+      - "9001:9000" # API
+      - "9091:9090" # Console
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    command: server /data --console-address ":9090"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+    networks:
+      - pets-network
+
+  # MinIO Client для ініціалізації bucket
+  minio-init:
+    image: minio/mc:latest
+    container_name: pets_minio_init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c " sleep 10; /usr/bin/mc alias set minio http://minio:9000 minioadmin minioadmin; /usr/bin/mc mb minio/pets-photos --ignore-existing; /usr/bin/mc policy set public minio/pets-photos; exit 0; "
+    networks:
+      - pets-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+
+networks:
+  pets-network:
+    driver: bridge

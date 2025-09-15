@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.22-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
@@ -24,8 +24,8 @@ WORKDIR /root/
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
 
-# Copy templates and static files if they exist
-COPY --from=builder /app/web ./web
+# Copy migrations
+COPY --from=builder /app/migrations ./migrations
 
 # Expose port
 EXPOSE 8080

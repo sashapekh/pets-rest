@@ -60,45 +60,69 @@ EXPOSE 8080
 CMD ["./main"]
 ```
 
-## 🗄️ Сервіс MongoDB
+## 🗄️ Сервіс PostgreSQL
 
 ### Конфігурація
 ```yaml
-mongodb:
-  image: mongo:7.0
-  container_name: pets_mongodb
+postgres:
+  image: postgres:17-alpine
+  container_name: pets_postgres
   ports:
-    - "27017:27017"
+    - "5432:5432"
   environment:
-    - MONGO_INITDB_ROOT_USERNAME=admin
-    - MONGO_INITDB_ROOT_PASSWORD=password
-    - MONGO_INITDB_DATABASE=pets_search
+    - POSTGRES_USER=pets_user
+    - POSTGRES_PASSWORD=pets_password
+    - POSTGRES_DB=pets_search
   volumes:
-    - mongodb_data:/data/db
-    - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    - postgres_data:/var/lib/postgresql/data
 ```
 
 ### Особливості
-- **Образ**: mongo:7.0 (офіційний)
-- **Порт**: 27017
-- **Автентифікація**: admin/password
-- **Ініціалізація**: Автоматично виконується скрипт `mongo-init.js`
-- **Persistence**: Дані зберігаються у volume `mongodb_data`
+- **Образ**: postgres:17-alpine (офіційний)
+- **Порт**: 5432
+- **Автентифікація**: pets_user/pets_password
+- **База даних**: pets_search
+- **Міграції**: Автоматично запускаються при старті API
 
-### Підключення
+### Система міграцій
+Проект використовує [golang-migrate](https://github.com/golang-migrate/migrate) для управління схемою бази даних:
+
 ```bash
-# З контейнера
-docker compose exec mongodb mongosh -u admin -p password
+# Запустити міграції
+make migrate-up
 
-# Ззовні
-mongosh "mongodb://admin:password@localhost:27017/pets_search?authSource=admin"
+# Відкотити міграції
+make migrate-down
+
+# Перевірити версію міграцій
+make migrate-version
 ```
 
-### Ініціалізаційний скрипт
-Скрипт `scripts/mongo-init.js`:
-- Створює колекції з валідацією схем
-- Налаштовує індекси для оптимізації
-- Готує базу до роботи
+### Структура міграцій
+```
+migrations/
+├── 001_create_users_table.up.sql
+├── 001_create_users_table.down.sql
+├── 002_create_listings_table.up.sql
+├── 002_create_listings_table.down.sql
+├── 003_create_events_table.up.sql
+└── 003_create_events_table.down.sql
+```
+
+### Підключення до PostgreSQL
+```bash
+# З контейнера
+docker compose exec postgres psql -U pets_user -d pets_search
+
+# Ззовні (потрібен встановлений PostgreSQL клієнт)
+psql -h localhost -p 5432 -U pets_user -d pets_search
+```
+
+### Міграції
+Система автоматично:
+- Створює таблиці з обмеженнями та індексами
+- Підтримує версіонування змін схеми
+- Забезпечує можливість відкату змін
 
 ## ⚡ Сервіс Redis
 
