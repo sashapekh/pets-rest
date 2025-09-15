@@ -1,10 +1,19 @@
 version: "2"
 
 run:
+  # timeout for running all linters
   timeout: 5m
-  # інші run-опції
+  # Аналізувати також тестові файли?
+  tests: true
+  # go версія (якщо потрібно)
+  go: "1.25"
+  # рівень паралелізму, за потреби
+  concurrency: 4
 
 linters:
+  # Опції default: standard / all / none / fast
+  default: none
+  # Які лінтери ввімкнути
   enable:
     - errcheck
     - govet
@@ -14,28 +23,62 @@ linters:
     - bodyclose
     - cyclop
     - misspell
-    # revive чи інші, за потреби
-
-linters-settings:
-  # **Цю секцію або перейменуйте у linters.settings** якщо це правильне місце згідно документації
-  cyclop:
-    max-complexity: 15
-  revive:
-    confidence: 0.8
+    - revive
+  # Які вимкнути (якщо треба)
+  disable:
+    - someOtherLinterYouDontNeed
+  settings:
+    cyclop:
+      min-complexity: 0        # якщо мінімальна межа для complexity, приклад
+      max-complexity: 15       # твій ліміт для cyclop
+    revive:
+      confidence: 0.8
+      # можеш додати інші налаштування revive, якщо потрібно
+      # наприклад правила, severity, etc.
 
 issues:
+  # які файли виключати з аналізу помилок
   exclude-files:
-    - "_test\\.go"   # або які файли виключати
+    - "_test\\.go"
+  # виключення по директоріях, якщо потрібно
+  exclude-dirs:
+    - "vendor"
+    - "third_party"
+  # правила виключення (exclude-rules)
   exclude-rules:
+    # приклад: для лінтера cyclop виключити певний вид тексту
     - linters:
         - cyclop
-      text: "some text to exclude"
-  # інші опції як exclude-patterns, include, etc.
+      text: "parameter list too long"
+    # приклад: для будь-якого лінтера виключити шлях
+    - path: "internal/generated/"
+  max-issues-per-linter: 0   # 0 — без обмежень, або вкажи число
+  max-same-issues: 0         # аналогічно
 
 output:
   formats:
-    - format: colored-line-number
-      # path або інші підопції
+    colored-line-number: {}
+    json: {}
   print-issued-lines: true
   print-linter-name: true
-  # інші опції як sort-results, path-prefix тощо
+  sort-results: true
+  path-prefix: ""
+  show-stats: true
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+    goimports:
+      local-prefixes: "your/project/module/path"
+
+severity:
+  default-severity: "warning"
+  case-sensitive: false
+  rules:
+    - path: ".*\\.go"
+      severity: "error"
+
