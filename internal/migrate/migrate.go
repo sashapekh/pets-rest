@@ -18,7 +18,7 @@ func Run(databaseURL, migrationsPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create migration instance: %w", err)
 	}
-	defer m.Close()
+	defer func() { _, _ = m.Close() }()
 
 	// Run migrations
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
@@ -43,7 +43,7 @@ func Down(databaseURL, migrationsPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create migration instance: %w", err)
 	}
-	defer m.Close()
+	defer func() { _, _ = m.Close() }()
 
 	// Rollback all migrations
 	if err := m.Down(); err != nil && err != migrate.ErrNoChange {
@@ -63,7 +63,7 @@ func Version(databaseURL, migrationsPath string) (version uint, dirty bool, err 
 	if err != nil {
 		return 0, false, fmt.Errorf("failed to create migration instance: %w", err)
 	}
-	defer m.Close()
+	defer func() { _, _ = m.Close() }()
 
 	version, dirty, err = m.Version()
 	if err != nil {

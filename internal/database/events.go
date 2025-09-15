@@ -76,7 +76,7 @@ func (r *EventRepository) GetAnalytics(listingID int) (map[string]int, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
 		var eventType string
@@ -109,7 +109,7 @@ func (r *EventRepository) GetDailyAnalytics(listingID, days int) ([]map[string]i
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var analytics []map[string]interface{}
 

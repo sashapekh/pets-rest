@@ -34,7 +34,7 @@ func TestHealthCheck(t *testing.T) {
 	assert.Equal(t, 200, resp.StatusCode)
 
 	// Закрити response body
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func TestHealthCheckWithDBError(t *testing.T) {
@@ -59,5 +59,5 @@ func TestHealthCheckWithDBError(t *testing.T) {
 	assert.Equal(t, 503, resp.StatusCode)
 
 	// Закрити response body
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }

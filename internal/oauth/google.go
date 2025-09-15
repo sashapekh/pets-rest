@@ -1,3 +1,4 @@
+// Package oauth provides OAuth2 authentication functionality for external providers
 package oauth
 
 import (
@@ -18,10 +19,12 @@ const (
 	pkceKey  = "oauth_pkce"
 )
 
+// GoogleProvider handles Google OAuth2 authentication
 type GoogleProvider struct {
 	cfg *oauth2.Config
 }
 
+// NewGoogle creates a new Google OAuth2 provider with configuration from environment variables
 func NewGoogle() *GoogleProvider {
 	return &GoogleProvider{
 		cfg: &oauth2.Config{
@@ -34,6 +37,7 @@ func NewGoogle() *GoogleProvider {
 	}
 }
 
+// AuthURLWithPKCEandState generates an OAuth2 authorization URL with PKCE and state parameters
 func (p *GoogleProvider) AuthURLWithPKCEandState(sess *session.Session) (string, error) {
 	state := NewState()
 	ver, ch := NewPKCE()
@@ -51,6 +55,7 @@ func (p *GoogleProvider) AuthURLWithPKCEandState(sess *session.Session) (string,
 	), nil
 }
 
+// HandleCallback processes the OAuth2 callback and returns user information
 func (p *GoogleProvider) HandleCallback(ctx context.Context, sess *session.Session, state, code string) (User, error) {
 	if state == "" || state != helper.GetString(sess.Get(stateKey)) {
 		return User{}, errors.New("invalid state parameter")
@@ -73,7 +78,7 @@ func (p *GoogleProvider) HandleCallback(ctx context.Context, sess *session.Sessi
 	if err != nil {
 		return User{}, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var ui struct {
 		Sub           string `json:"sub"`
