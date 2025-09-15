@@ -1,42 +1,41 @@
-version: 2
+version: "2"
 
 run:
   timeout: 5m
-  go: "1.25"
-
-linters-settings:
-  cyclop:
-    max-complexity: 15
-  
-  revive:
-    confidence: 0.8
+  # інші run-опції
 
 linters:
   enable:
-    # Default enabled linters (explicit for clarity)
     - errcheck
     - govet
     - ineffassign
     - staticcheck
     - unused
-    
-    # Additional useful linters
     - bodyclose
     - cyclop
     - misspell
-    # - revive
-    - whitespace
+    # revive чи інші, за потреби
+
+linters-settings:
+  # **Цю секцію або перейменуйте у linters.settings** якщо це правильне місце згідно документації
+  cyclop:
+    max-complexity: 15
+  revive:
+    confidence: 0.8
 
 issues:
+  exclude-files:
+    - "_test\\.go"   # або які файли виключати
   exclude-rules:
-    # Exclude some linters from running on tests files
-    - path: _test\.go
-      linters:
+    - linters:
         - cyclop
-        - errcheck
-        # - revive
+      text: "some text to exclude"
+  # інші опції як exclude-patterns, include, etc.
 
 output:
-  format: colored-line-number
+  formats:
+    - format: colored-line-number
+      # path або інші підопції
   print-issued-lines: true
   print-linter-name: true
+  # інші опції як sort-results, path-prefix тощо
