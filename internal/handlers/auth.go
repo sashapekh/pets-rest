@@ -1,23 +1,36 @@
 package handlers
 
 import (
+	"pets_rest/internal/auth"
 	"pets_rest/internal/config"
 	"pets_rest/internal/database"
 	"pets_rest/internal/oauth"
+	"pets_rest/internal/services"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/session"
+	"go.uber.org/fx"
 )
 
 type AuthHandler struct {
 	db             *database.DB
 	cfg            *config.Config
 	googleProvider *oauth.GoogleProvider
+	UserService    *services.UserService
 }
 
-func NewAuthHandler(db *database.DB, cfg *config.Config) *AuthHandler {
+type AuthHandlerDeps struct {
+	fx.In
+	Config      *config.Config
+	DB          *database.DB
+	UserService *services.UserService
+}
+
+func NewAuthHandler(deps AuthHandlerDeps) *AuthHandler {
 	return &AuthHandler{
-		db: db, cfg: cfg,
+		db:             deps.DB,
+		cfg:            deps.Config,
+		UserService:    deps.UserService,
 		googleProvider: oauth.NewGoogle(),
 	}
 }
@@ -48,7 +61,22 @@ func (h *AuthHandler) GoogleCallback(c fiber.Ctx) error {
 		})
 	}
 
+	user, err := h.UserService.FirstOrNewUserForRegister(&u)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	token, err := auth.GenerateToken(user.ID, user.Email, h.cfg)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
 	return c.JSON(fiber.Map{
-		"user": u,
+		"access_token": token,
+		"user":         user,
 	})
 }

@@ -6,14 +6,20 @@ import (
 	"pets_rest/internal/database"
 
 	"github.com/gofiber/fiber/v3"
+	"go.uber.org/fx"
 )
 
 type HealthHandler struct {
-	db database.Interface
+	db *database.DB
 }
 
-func NewHealthHandler(db database.Interface) *HealthHandler {
-	return &HealthHandler{db: db}
+type HealthHandlerDeps struct {
+	fx.In
+	DB *database.DB
+}
+
+func NewHealthHandler(deps HealthHandlerDeps) *HealthHandler {
+	return &HealthHandler{db: deps.DB}
 }
 
 func (h *HealthHandler) HealthCheck(c fiber.Ctx) error {
