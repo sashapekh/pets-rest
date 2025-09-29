@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-
-	"github.com/lib/pq"
 )
 
 // User represents a user in the system
@@ -39,20 +37,19 @@ const (
 
 // Listing represents a pet listing
 type Listing struct {
-	ID           int            `json:"id" db:"id"`
-	UserID       int            `json:"user_id" db:"user_id"`
-	Type         ListingType    `json:"type" db:"type"`
-	Title        string         `json:"title" db:"title"`
-	Description  *string        `json:"description,omitempty" db:"description"`
-	City         *string        `json:"city,omitempty" db:"city"`
-	Location     *string        `json:"location,omitempty" db:"location"`
-	ContactPhone *string        `json:"contact_phone,omitempty" db:"contact_phone"`
-	ContactTg    *string        `json:"contact_tg,omitempty" db:"contact_tg"`
-	Status       ListingStatus  `json:"status" db:"status"`
-	Slug         *string        `json:"slug,omitempty" db:"slug"`
-	Images       pq.StringArray `json:"images" db:"images"`
-	CreatedAt    time.Time      `json:"created_at" db:"created_at"`
-	UpdatedAt    *time.Time     `json:"updated_at,omitempty" db:"updated_at"`
+	ID           int           `json:"id" db:"id"`
+	UserID       int           `json:"user_id" db:"user_id"`
+	Type         ListingType   `json:"type" db:"type"`
+	Title        string        `json:"title" db:"title"`
+	Description  *string       `json:"description,omitempty" db:"description"`
+	City         *string       `json:"city,omitempty" db:"city"`
+	Location     *string       `json:"location,omitempty" db:"location"`
+	ContactPhone *string       `json:"contact_phone,omitempty" db:"contact_phone"`
+	ContactTg    *string       `json:"contact_tg,omitempty" db:"contact_tg"`
+	Status       ListingStatus `json:"status" db:"status"`
+	Slug         *string       `json:"slug,omitempty" db:"slug"`
+	CreatedAt    time.Time     `json:"created_at" db:"created_at"`
+	UpdatedAt    *time.Time    `json:"updated_at,omitempty" db:"updated_at"`
 }
 
 // EventType represents the type of event
@@ -89,6 +86,30 @@ func (j *JSONPayload) Scan(value interface{}) error {
 	}
 
 	return json.Unmarshal(bytes, j)
+}
+
+// ImageableType represents the type of entity that can have images
+type ImageableType string
+
+const (
+	ImageableTypeUser    ImageableType = "user"
+	ImageableTypeListing ImageableType = "listing"
+)
+
+// Image represents an image in the polymorphic images table
+type Image struct {
+	ID            int           `json:"id" db:"id"`
+	ImageableType ImageableType `json:"imageable_type" db:"imageable_type"`
+	ImageableID   int           `json:"imageable_id" db:"imageable_id"`
+	URL           string        `json:"url" db:"url"`
+	Filename      *string       `json:"filename,omitempty" db:"filename"`
+	SizeBytes     *int          `json:"size_bytes,omitempty" db:"size_bytes"`
+	MimeType      *string       `json:"mime_type,omitempty" db:"mime_type"`
+	AltText       *string       `json:"alt_text,omitempty" db:"alt_text"`
+	SortOrder     int           `json:"sort_order" db:"sort_order"`
+	IsPrimary     bool          `json:"is_primary" db:"is_primary"`
+	CreatedAt     time.Time     `json:"created_at" db:"created_at"`
+	UpdatedAt     *time.Time    `json:"updated_at,omitempty" db:"updated_at"`
 }
 
 // Event represents an analytics event

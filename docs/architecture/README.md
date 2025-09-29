@@ -20,7 +20,7 @@ Pets Search REST API побудований на основі чистої ар�
                 ┌─────────────┼─────────────┐
                 │             │             │
         ┌───────▼──────┐ ┌───▼────┐ ┌──────▼──────┐
-        │   MongoDB    │ │ Redis  │ │   MinIO     │
+        │  PostgreSQL  │ │ Redis  │ │   MinIO     │
         │   (Database) │ │(Cache) │ │ (Files/S3)  │
         └──────────────┘ └────────┘ └─────────────┘
 ```
@@ -35,18 +35,23 @@ cmd/api/                    # Вхідна точка програми
 
 internal/                   # Приватний код програми
 ├── config/                # Конфігурація
-├── listings/              # Бізнес-логіка оголошень
-├── users/                 # Управління користувачами
-├── storage/               # Робота з файлами (S3/MinIO)
-├── pdf/                   # Генерація PDF
-├── qrcode/                # Генерація QR кодів
-└── database/              # Робота з базою даних
+├── handlers/              # HTTP обробники
+├── services/              # Бізнес-логіка сервісів
+├── database/              # Моделі та репозиторії
+├── auth/                  # Аутентифікація та JWT
+├── oauth/                 # OAuth провайдери (Google)
+├── fx/                    # Dependency Injection
+└── storage/               # Робота з файлами (S3/MinIO)
 
 pkg/                       # Публічні пакети
-├── middleware/            # HTTP middleware
-└── utils/                 # Загальні утиліти
+├── helper/                # Загальні утиліти
+└── middleware/            # HTTP middleware
 
-web/                       # Веб ресурси
+migrations/                # Міграції бази даних
+├── *.up.sql              # Міграції вгору
+└── *.down.sql            # Міграції назад
+
+web/                       # Веб ресурси (якщо потрібно)
 ├── templates/             # HTML шаблони для SSR
 └── static/                # CSS, JS, зображення
 ```
@@ -67,6 +72,7 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL UNIQUE,
     phone VARCHAR(20),
     name VARCHAR(100),
+    avatar_url TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ
 );
@@ -86,7 +92,6 @@ CREATE TABLE listings (
     contact_tg VARCHAR(100),
     status VARCHAR(10) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'archived')),
     slug VARCHAR(255) UNIQUE,
-    images TEXT[],
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ
 );
@@ -103,6 +108,24 @@ CREATE TABLE events (
     ip_address INET,
     user_agent TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+### Таблиця `images` (поліморфна)
+```sql
+CREATE TABLE images (
+    id SERIAL PRIMARY KEY,
+    imageable_type VARCHAR(50) NOT NULL,
+    imageable_id INTEGER NOT NULL,
+    url TEXT NOT NULL,
+    filename VARCHAR(255),
+    size_bytes INTEGER,
+    mime_type VARCHAR(100),
+    alt_text TEXT,
+    sort_order INTEGER DEFAULT 0,
+    is_primary BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ
 );
 ```
 
@@ -147,8 +170,8 @@ Search Query → API → Database Query → Cache → Filtered Results
 
 ```
 # Аутентифікація
-POST   /auth/magic-link         # Відправка magic link
-POST   /auth/magic-link/verify  # Верифікація
+GET    /auth/google             # Google OAuth вхід
+GET    /auth/google/callback    # Google OAuth callback
 
 # Оголошення (потребують авторизації)
 GET    /api/v1/listings         # Список оголошень
@@ -157,8 +180,17 @@ GET    /api/v1/listings/:id     # Деталі
 PUT    /api/v1/listings/:id     # Оновлення
 DELETE /api/v1/listings/:id     # Видалення
 
+# Зображення
+GET    /api/v1/listings/:id/images    # Отримання зображень оголошення
+POST   /api/v1/listings/:id/images    # Додавання зображення
+DELETE /api/v1/images/:id            # Видалення зображення
+PUT    /api/v1/images/:id/primary     # Встановити як основне
+
+# Профіль
+GET    /api/v1/profile              # Профіль користувача
+GET    /api/v1/profile/images       # Зображення користувача
+
 # Файли
-POST   /api/v1/listings/:id/images    # Завантаження фото
 POST   /api/v1/listings/:id/pdf       # Генерація PDF
 
 # Публічні сторінки
@@ -170,7 +202,7 @@ GET    /healthz                 # Health check
 
 ## 🔐 Безпека
 
-1. **Аутентифікація**: Magic links через email
+1. **Аутентифікація**: Google OAuth 2.0
 2. **Авторизація**: JWT токени
 3. **Валідація**: Всі вхідні дані
 4. **Rate Limiting**: Обмеження запитів

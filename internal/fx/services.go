@@ -8,5 +8,6 @@ import (
 
 var ServiceModule = fx.Module("services", fx.Provide(
 	services.NewStorageService,
+	services.NewImageService,
 	services.NewUserService,
 ))

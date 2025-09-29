@@ -10,4 +10,5 @@ var HandlerModule = fx.Module("handlers", fx.Provide(
 	handlers.NewHealthHandler,
 	handlers.NewAuthHandler,
 	handlers.NewUserProfileHandler,
+	handlers.NewImageHandler,
 ))

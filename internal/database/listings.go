@@ -3,8 +3,6 @@ package database
 import (
 	"fmt"
 	"time"
-
-	"github.com/lib/pq"
 )
 
 // ListingRepository handles listing database operations
@@ -20,8 +18,8 @@ func NewListingRepository(db *DB) *ListingRepository {
 // Create creates a new listing
 func (r *ListingRepository) Create(listing *Listing) error {
 	query := `
-		INSERT INTO listings (user_id, type, title, description, city, location, contact_phone, contact_tg, status, slug, images, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		INSERT INTO listings (user_id, type, title, description, city, location, contact_phone, contact_tg, status, slug, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING id, created_at`
 
 	err := r.db.QueryRow(query,
@@ -35,7 +33,6 @@ func (r *ListingRepository) Create(listing *Listing) error {
 		listing.ContactTg,
 		listing.Status,
 		listing.Slug,
-		pq.Array(listing.Images),
 		time.Now()).
 		Scan(&listing.ID, &listing.CreatedAt)
 
@@ -46,7 +43,7 @@ func (r *ListingRepository) Create(listing *Listing) error {
 func (r *ListingRepository) GetByID(id int) (*Listing, error) {
 	listing := &Listing{}
 	query := `
-		SELECT id, user_id, type, title, description, city, location, contact_phone, contact_tg, status, slug, images, created_at, updated_at 
+		SELECT id, user_id, type, title, description, city, location, contact_phone, contact_tg, status, slug, created_at, updated_at 
 		FROM listings 
 		WHERE id = $1`
 
@@ -62,7 +59,7 @@ func (r *ListingRepository) GetByID(id int) (*Listing, error) {
 func (r *ListingRepository) GetBySlug(slug string) (*Listing, error) {
 	listing := &Listing{}
 	query := `
-		SELECT id, user_id, type, title, description, city, location, contact_phone, contact_tg, status, slug, images, created_at, updated_at 
+		SELECT id, user_id, type, title, description, city, location, contact_phone, contact_tg, status, slug, created_at, updated_at 
 		FROM listings 
 		WHERE slug = $1 AND status = 'active'`
 
@@ -78,7 +75,7 @@ func (r *ListingRepository) GetBySlug(slug string) (*Listing, error) {
 func (r *ListingRepository) Update(listing *Listing) error {
 	query := `
 		UPDATE listings 
-		SET type = $2, title = $3, description = $4, city = $5, location = $6, contact_phone = $7, contact_tg = $8, status = $9, slug = $10, images = $11, updated_at = $12
+		SET type = $2, title = $3, description = $4, city = $5, location = $6, contact_phone = $7, contact_tg = $8, status = $9, slug = $10, updated_at = $11
 		WHERE id = $1
 		RETURNING updated_at`
 
@@ -93,7 +90,6 @@ func (r *ListingRepository) Update(listing *Listing) error {
 		listing.ContactTg,
 		listing.Status,
 		listing.Slug,
-		pq.Array(listing.Images),
 		time.Now()).
 		Scan(&listing.UpdatedAt)
 
@@ -125,7 +121,7 @@ func (r *ListingRepository) Delete(id int) error {
 func (r *ListingRepository) ListByUser(userID, limit, offset int) ([]*Listing, error) {
 	listings := []*Listing{}
 	query := `
-		SELECT id, user_id, type, title, description, city, location, contact_phone, contact_tg, status, slug, images, created_at, updated_at 
+		SELECT id, user_id, type, title, description, city, location, contact_phone, contact_tg, status, slug, created_at, updated_at 
 		FROM listings 
 		WHERE user_id = $1 
 		ORDER BY created_at DESC 
@@ -140,7 +136,7 @@ func (r *ListingRepository) ListActive(listingType *ListingType, city *string, l
 	listings := []*Listing{}
 
 	baseQuery := `
-		SELECT id, user_id, type, title, description, city, location, contact_phone, contact_tg, status, slug, images, created_at, updated_at 
+		SELECT id, user_id, type, title, description, city, location, contact_phone, contact_tg, status, slug, created_at, updated_at 
 		FROM listings 
 		WHERE status = 'active'`
 
@@ -181,7 +177,7 @@ func (r *ListingRepository) ListActive(listingType *ListingType, city *string, l
 func (r *ListingRepository) Search(query string, limit, offset int) ([]*Listing, error) {
 	listings := []*Listing{}
 	searchQuery := `
-		SELECT id, user_id, type, title, description, city, location, contact_phone, contact_tg, status, slug, images, created_at, updated_at 
+		SELECT id, user_id, type, title, description, city, location, contact_phone, contact_tg, status, slug, created_at, updated_at 
 		FROM listings 
 		WHERE status = 'active' 
 		AND (title ILIKE $1 OR description ILIKE $1)

@@ -9,7 +9,6 @@ import (
 // MockDB - mock реалізація для тестування
 type MockDB struct {
 	*DB
-	shouldFail bool
 }
 
 // NewMockDB створює новий mock DB
