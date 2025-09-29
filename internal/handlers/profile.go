@@ -30,5 +30,5 @@ func (h *UserProfileHandler) GetUserProfile(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.JSON(fiber.Map{"message": "success", "user_profile": userProfile})
+	return c.JSON(fiber.Map{"message": "success", "user": userProfile})
 }
