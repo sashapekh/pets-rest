@@ -23,7 +23,7 @@ services:
     volumes:
       - .:/app
     restart: unless-stopped
-    networks:a
+    networks:
       - pets-network
 
   # PostgreSQL

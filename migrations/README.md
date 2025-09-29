@@ -6,13 +6,19 @@
 
 ```
 migrations/
-├── 001_create_users_table.up.sql       # Створення таблиці користувачів
-├── 001_create_users_table.down.sql     # Видалення таблиці користувачів
-├── 002_create_listings_table.up.sql    # Створення таблиці оголошень
-├── 002_create_listings_table.down.sql  # Видалення таблиці оголошень
-├── 003_create_events_table.up.sql      # Створення таблиці подій
-├── 003_create_events_table.down.sql    # Видалення таблиці подій
-└── README.md                           # Цей файл
+├── 001_create_users_table.up.sql                      # Створення таблиці користувачів
+├── 001_create_users_table.down.sql                    # Видалення таблиці користувачів
+├── 002_create_listings_table.up.sql                   # Створення таблиці оголошень
+├── 002_create_listings_table.down.sql                 # Видалення таблиці оголошень
+├── 003_create_events_table.up.sql                     # Створення таблиці подій
+├── 003_create_events_table.down.sql                   # Видалення таблиці подій
+├── 004_create_images_table.up.sql                     # Поліморфна таблиця зображень
+├── 004_create_images_table.down.sql                   # Видалення таблиці зображень
+├── 005_add_avatar_url_to_users.up.sql                 # Додавання avatar_url до users
+├── 005_add_avatar_url_to_users.down.sql               # Видалення avatar_url з users
+├── 006_migrate_listing_images_to_images_table.up.sql  # Міграція зображень з listings
+├── 006_migrate_listing_images_to_images_table.down.sql # Відкат міграції зображень
+└── README.md                                          # Цей файл
 ```
 
 ## 🚀 Команди
@@ -59,8 +65,8 @@ go run ./cmd/migrate -version
 
 Приклад:
 ```
-004_add_user_avatar.up.sql
-004_add_user_avatar.down.sql
+007_add_user_preferences.up.sql
+007_add_user_preferences.down.sql
 ```
 
 ### 2. Приклад UP міграції
@@ -134,10 +140,25 @@ migrate -database "postgres://pets_user:pets_password@localhost:5432/pets_search
 
 ### Версія 2: Оголошення
 - Таблиця `listings` з зовнішнім ключем до `users`
-- Підтримка масивів зображень (PostgreSQL arrays)
 - Check constraints для enum значень
+- Індекси для оптимізації запитів
 
 ### Версія 3: Аналітика
 - Таблиця `events` для збору метрик
 - JSONB поле для гнучких даних
 - Індекси для швидких запитів
+
+### Версія 4: Поліморфні зображення
+- Таблиця `images` для зберігання зображень різних сутностей
+- Поліморфні зв'язки через `imageable_type` та `imageable_id`
+- Підтримка метаданих зображень (розмір, MIME-тип, тощо)
+- Сортування та позначення основного зображення
+
+### Версія 5: Аватарки користувачів
+- Додано поле `avatar_url` до таблиці `users`
+- Інтеграція з Google OAuth для автоматичного збереження аватарок
+
+### Версія 6: Міграція зображень
+- Перенос існуючих зображень з `listings.images` до таблиці `images`
+- Видалення застарілого поля `images` з таблиці `listings`
+- Збереження порядку та позначення першого зображення як основного

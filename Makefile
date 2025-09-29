@@ -55,6 +55,7 @@ clean: ## Clean build artifacts
 # Docker operations
 docker-ps:
 	$(DOCKER_COMPOSE) ps
+
 docker-up: ## Start all services with Docker Compose
 	$(DOCKER_COMPOSE) up -d
 

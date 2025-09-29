@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -19,6 +20,17 @@ type Config struct {
 	// Redis
 	RedisURL string
 
+	// Storage configuration
+	// Storage Configuration
+	StorageProvider    string
+	StorageEndpoint    string
+	StorageRegion      string
+	StorageBucket      string
+	StorageAccessKey   string
+	StorageSecretKey   string
+	StorageUseSSL      bool
+	StorageCredentials string
+
 	// MinIO / S3
 	MinIOEndpoint  string
 	MinIOAccessKey string
@@ -27,7 +39,8 @@ type Config struct {
 	MinIOBucket    string
 
 	// JWT
-	JWTSecret string
+	JWTSecret         string
+	JWTExpirationTime time.Duration
 
 	// Email
 	SMTPHost     string
@@ -63,13 +76,24 @@ func Load() *Config {
 		DatabaseURL: getEnv("DATABASE_URL", "postgres://pets_user:pets_password@localhost:5432/pets_search?sslmode=disable"),
 		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379"),
 
+		// Storage configuration
+		StorageProvider:    getEnv("STORAGE_PROVIDER", "minio"),
+		StorageEndpoint:    getEnv("STORAGE_ENDPOINT", getEnv("MINIO_ENDPOINT", "localhost:9000")),
+		StorageRegion:      getEnv("STORAGE_REGION", "us-east-1"),
+		StorageBucket:      getEnv("STORAGE_BUCKET", getEnv("MINIO_BUCKET", "pets-photos")),
+		StorageAccessKey:   getEnv("STORAGE_ACCESS_KEY", getEnv("MINIO_ACCESS_KEY", "minioadmin")),
+		StorageSecretKey:   getEnv("STORAGE_SECRET_KEY", getEnv("MINIO_SECRET_KEY", "minioadmin")),
+		StorageUseSSL:      getEnvAsBool("STORAGE_USE_SSL", getEnvAsBool("MINIO_USE_SSL", false)),
+		StorageCredentials: getEnv("STORAGE_CREDENTIALS", ""),
+
 		MinIOEndpoint:  getEnv("MINIO_ENDPOINT", "localhost:9000"),
 		MinIOAccessKey: getEnv("MINIO_ACCESS_KEY", "minioadmin"),
 		MinIOSecretKey: getEnv("MINIO_SECRET_KEY", "minioadmin"),
 		MinIOUseSSL:    getEnvAsBool("MINIO_USE_SSL", false),
 		MinIOBucket:    getEnv("MINIO_BUCKET", "pets-photos"),
 
-		JWTSecret: getEnv("JWT_SECRET", "your-super-secret-jwt-key-here"),
+		JWTSecret:         getEnv("JWT_SECRET", "your-super-secret-jwt-key-here"),
+		JWTExpirationTime: time.Duration(getEnvAsInt("JWT_EXPIRATION_TIME", 86400)) * time.Second,
 
 		SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),
 		SMTPPort:     getEnvAsInt("SMTP_PORT", 587),

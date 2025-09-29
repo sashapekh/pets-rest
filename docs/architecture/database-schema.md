@@ -6,6 +6,7 @@
 pets_search
 ├── users           # Користувачі системи
 ├── listings        # Оголошення про тварин
+├── images          # Поліморфні зображення
 └── events          # Аналітичні події
 ```
 
@@ -18,6 +19,7 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL UNIQUE,
     phone VARCHAR(20),
     name VARCHAR(100),
+    avatar_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE
 );
@@ -30,6 +32,7 @@ CREATE TABLE users (
 | `email` | VARCHAR(255) | ✅ | Email адреса (унікальна) |
 | `phone` | VARCHAR(20) | ❌ | Номер телефону |
 | `name` | VARCHAR(100) | ❌ | Ім'я користувача |
+| `avatar_url` | TEXT | ❌ | URL аватарки (синхронізується з images) |
 | `created_at` | TIMESTAMPTZ | ✅ | Дата створення (автоматично) |
 | `updated_at` | TIMESTAMPTZ | ❌ | Дата останнього оновлення |
 
@@ -69,7 +72,6 @@ CREATE TABLE listings (
     contact_tg VARCHAR(100),
     status VARCHAR(10) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'archived')),
     slug VARCHAR(255) UNIQUE,
-    images TEXT[], -- Array of image URLs
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE
 );
@@ -89,7 +91,6 @@ CREATE TABLE listings (
 | `contact_tg` | VARCHAR(100) | ❌ | Telegram контакт |
 | `status` | VARCHAR(10) | ✅ | Статус: `draft`, `active`, `archived` |
 | `slug` | VARCHAR(255) | ❌ | URL slug (унікальний) |
-| `images` | TEXT[] | ❌ | Масив URL зображень |
 | `created_at` | TIMESTAMPTZ | ✅ | Дата створення (автоматично) |
 | `updated_at` | TIMESTAMPTZ | ❌ | Дата останнього оновлення |
 
@@ -105,101 +106,112 @@ CREATE INDEX idx_listings_type ON listings(type);
 CREATE INDEX idx_listings_status ON listings(status);
 
 -- Унікальний індекс на slug
-db.listings.createIndex({ slug: 1 }, { unique: true, sparse: true })
+CREATE INDEX idx_listings_slug ON listings(slug);
 
-// Індекс на місто
-db.listings.createIndex({ city: 1 })
+-- Індекс на місто
+CREATE INDEX idx_listings_city ON listings(city);
 
-// Індекс на дату створення (сортування)
-db.listings.createIndex({ created_at: -1 })
-
-// Складений індекс для пошуку
-db.listings.createIndex({ 
-  type: 1, 
-  status: 1, 
-  city: 1, 
-  created_at: -1 
-})
+-- Індекс на дату створення (сортування)
+CREATE INDEX idx_listings_created_at ON listings(created_at DESC);
 ```
 
-### Валідація
-```javascript
-{
-  $jsonSchema: {
-    bsonType: "object",
-    required: ["user_id", "type", "title", "status", "created_at"],
-    properties: {
-      user_id: {
-        bsonType: "objectId"
-      },
-      type: {
-        bsonType: "string",
-        enum: ["lost", "found", "adopt"]
-      },
-      title: {
-        bsonType: "string",
-        minLength: 3,
-        maxLength: 200
-      },
-      description: {
-        bsonType: "string",
-        maxLength: 2000
-      },
-      status: {
-        bsonType: "string",
-        enum: ["draft", "active", "archived"]
-      },
-      slug: {
-        bsonType: "string",
-        pattern: "^[a-z0-9-]+$"
-      },
-      images: {
-        bsonType: "array",
-        maxItems: 5,
-        items: {
-          bsonType: "string"
-        }
-      }
-    }
-  }
-}
-```
+## 🖼️ Таблиця `images` (Поліморфна)
 
-## 📈 Колекція `events`
-
-### Структура документу
-```javascript
-{
-  _id: ObjectId("507f1f77bcf86cd799439013"),
-  user_id: ObjectId("507f1f77bcf86cd799439011"), // опціонально
-  listing_id: ObjectId("507f1f77bcf86cd799439012"),
-  type: "view",
-  payload: {
-    referrer: "https://google.com",
-    device: "mobile",
-    browser: "Chrome",
-    coordinates: {
-      lat: 50.4501,
-      lng: 30.5234
-    }
-  },
-  ip_address: "192.168.1.1",
-  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)...",
-  created_at: ISODate("2024-01-01T12:00:00Z")
-}
+### Структура таблиці
+```sql
+CREATE TABLE images (
+    id SERIAL PRIMARY KEY,
+    imageable_type VARCHAR(50) NOT NULL,
+    imageable_id INTEGER NOT NULL,
+    url TEXT NOT NULL,
+    filename VARCHAR(255),
+    size_bytes INTEGER,
+    mime_type VARCHAR(100),
+    alt_text TEXT,
+    sort_order INTEGER DEFAULT 0,
+    is_primary BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE
+);
 ```
 
 ### Поля
 | Поле | Тип | Обов'язкове | Опис |
 |------|-----|-------------|------|
-| `_id` | ObjectId | ✅ | Унікальний ідентифікатор |
-| `user_id` | ObjectId | ❌ | Користувач (якщо авторизований) |
-| `listing_id` | ObjectId | ✅ | Посилання на оголошення |
-| `type` | String | ✅ | Тип події |
-| `payload` | Object | ❌ | Додаткові дані |
-| `ip_address` | String | ❌ | IP адреса клієнта |
-| `user_agent` | String | ❌ | User Agent браузера |
-| `created_at` | Date | ✅ | Час події |
+| `id` | SERIAL | ✅ | Унікальний ідентифікатор (автоінкремент) |
+| `imageable_type` | VARCHAR(50) | ✅ | Тип сутності: `user`, `listing` |
+| `imageable_id` | INTEGER | ✅ | ID сутності |
+| `url` | TEXT | ✅ | URL зображення |
+| `filename` | VARCHAR(255) | ❌ | Оригінальне ім'я файлу |
+| `size_bytes` | INTEGER | ❌ | Розмір файлу в байтах |
+| `mime_type` | VARCHAR(100) | ❌ | MIME тип файлу |
+| `alt_text` | TEXT | ❌ | Альтернативний текст |
+| `sort_order` | INTEGER | ❌ | Порядок сортування (0, 1, 2...) |
+| `is_primary` | BOOLEAN | ❌ | Основне зображення сутності |
+| `created_at` | TIMESTAMPTZ | ✅ | Дата створення (автоматично) |
+| `updated_at` | TIMESTAMPTZ | ❌ | Дата останнього оновлення |
+
+### Типи сутностей
+| Тип | Опис |
+|-----|------|
+| `user` | Аватарки користувачів |
+| `listing` | Фото оголошень |
+
+### Індекси
+```sql
+-- Поліморфний індекс
+CREATE INDEX idx_images_polymorphic ON images(imageable_type, imageable_id);
+
+-- Індекс для сортування
+CREATE INDEX idx_images_sort ON images(imageable_type, imageable_id, sort_order);
+
+-- Унікальний індекс для основного зображення
+CREATE UNIQUE INDEX idx_images_unique_primary 
+ON images(imageable_type, imageable_id) 
+WHERE is_primary = TRUE;
+
+-- Індекс на дату створення
+CREATE INDEX idx_images_created_at ON images(created_at DESC);
+```
+
+### Обмеження (Constraints)
+```sql
+-- Валідація типу сутності
+ALTER TABLE images ADD CONSTRAINT check_imageable_type 
+CHECK (imageable_type IN ('user', 'listing'));
+
+-- Тригер для updated_at
+CREATE TRIGGER update_images_updated_at BEFORE UPDATE ON images
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+```
+
+## 📈 Таблиця `events`
+
+### Структура таблиці
+```sql
+CREATE TABLE events (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('view', 'qr_scan', 'contact_click', 'phone_click')),
+    payload JSONB,
+    ip_address INET,
+    user_agent TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+```
+
+### Поля
+| Поле | Тип | Обов'язкове | Опис |
+|------|-----|-------------|------|
+| `id` | SERIAL | ✅ | Унікальний ідентифікатор (автоінкремент) |
+| `user_id` | INTEGER | ❌ | Користувач (якщо авторизований) |
+| `listing_id` | INTEGER | ✅ | Посилання на оголошення (FK) |
+| `type` | VARCHAR(20) | ✅ | Тип події |
+| `payload` | JSONB | ❌ | Додаткові дані |
+| `ip_address` | INET | ❌ | IP адреса клієнта |
+| `user_agent` | TEXT | ❌ | User Agent браузера |
+| `created_at` | TIMESTAMPTZ | ✅ | Час події |
 
 ### Типи подій
 | Тип | Опис |
@@ -208,111 +220,136 @@ db.listings.createIndex({
 | `qr_scan` | Скан QR коду |
 | `contact_click` | Клік по контактним даним |
 | `phone_click` | Клік по номеру телефону |
-| `telegram_click` | Клік по Telegram |
-| `image_view` | Перегляд фото |
 
 ### Індекси
-```javascript
-// Індекс на оголошення
-db.events.createIndex({ listing_id: 1 })
+```sql
+-- Індекс на оголошення
+CREATE INDEX idx_events_listing_id ON events(listing_id);
 
-// Індекс на тип події
-db.events.createIndex({ type: 1 })
+-- Індекс на тип події
+CREATE INDEX idx_events_type ON events(type);
 
-// Індекс на дату (для аналітики)
-db.events.createIndex({ created_at: -1 })
+-- Індекс на дату (для аналітики)
+CREATE INDEX idx_events_created_at ON events(created_at DESC);
 
-// Індекс на користувача
-db.events.createIndex({ user_id: 1 })
+-- Індекс на користувача
+CREATE INDEX idx_events_user_id ON events(user_id);
 
-// Складений індекс для аналітики
-db.events.createIndex({ 
-  listing_id: 1, 
-  type: 1, 
-  created_at: -1 
-})
+-- Складений індекс для аналітики
+CREATE INDEX idx_events_analytics ON events(listing_id, type, created_at DESC);
 ```
 
 ## 🔍 Приклади запитів
 
 ### Пошук оголошень
-```javascript
-// Активні оголошення загублених тварин у Києві
-db.listings.find({
-  type: "lost",
-  status: "active",
-  city: "Київ"
-}).sort({ created_at: -1 })
+```sql
+-- Активні оголошення загублених тварин у Києві
+SELECT * FROM listings 
+WHERE type = 'lost' 
+  AND status = 'active' 
+  AND city ILIKE '%Київ%'
+ORDER BY created_at DESC;
 
-// Пошук по тексту (потребує text index)
-db.listings.find({
-  $text: { $search: "кіт сірий" },
-  status: "active"
-})
+-- Пошук по тексту (використовуючи ILIKE)
+SELECT * FROM listings 
+WHERE status = 'active' 
+  AND (title ILIKE '%кіт%' OR description ILIKE '%кіт%')
+ORDER BY created_at DESC;
+```
+
+### Робота з зображеннями
+```sql
+-- Отримати всі зображення оголошення
+SELECT * FROM images 
+WHERE imageable_type = 'listing' 
+  AND imageable_id = 123 
+ORDER BY sort_order ASC;
+
+-- Отримати основне зображення користувача
+SELECT * FROM images 
+WHERE imageable_type = 'user' 
+  AND imageable_id = 456 
+  AND is_primary = TRUE;
+
+-- Оголошення з їх основними зображеннями
+SELECT l.*, i.url as primary_image_url
+FROM listings l
+LEFT JOIN images i ON (
+    i.imageable_type = 'listing' 
+    AND i.imageable_id = l.id 
+    AND i.is_primary = TRUE
+)
+WHERE l.status = 'active'
+ORDER BY l.created_at DESC;
 ```
 
 ### Аналітика
-```javascript
-// Кількість переглядів оголошення
-db.events.countDocuments({
-  listing_id: ObjectId("507f1f77bcf86cd799439012"),
-  type: "view"
-})
+```sql
+-- Кількість переглядів оголошення
+SELECT COUNT(*) as views
+FROM events 
+WHERE listing_id = 123 
+  AND type = 'view';
 
-// Популярні оголошення за останній тиждень
-db.events.aggregate([
-  {
-    $match: {
-      type: "view",
-      created_at: { 
-        $gte: ISODate("2024-01-01T00:00:00Z") 
-      }
-    }
-  },
-  {
-    $group: {
-      _id: "$listing_id",
-      views: { $sum: 1 }
-    }
-  },
-  { $sort: { views: -1 } },
-  { $limit: 10 }
-])
+-- Популярні оголошення за останній тиждень
+SELECT 
+    l.id,
+    l.title,
+    COUNT(e.id) as views
+FROM listings l
+LEFT JOIN events e ON (e.listing_id = l.id AND e.type = 'view')
+WHERE l.status = 'active' 
+  AND e.created_at >= NOW() - INTERVAL '7 days'
+GROUP BY l.id, l.title
+ORDER BY views DESC
+LIMIT 10;
 ```
 
 ### Статистика користувача
-```javascript
-// Всі оголошення користувача
-db.listings.find({
-  user_id: ObjectId("507f1f77bcf86cd799439011")
-}).sort({ created_at: -1 })
+```sql
+-- Всі оголошення користувача з кількістю переглядів
+SELECT 
+    l.*,
+    COUNT(e.id) as total_views,
+    COUNT(CASE WHEN e.type = 'contact_click' THEN 1 END) as contact_clicks
+FROM listings l
+LEFT JOIN events e ON e.listing_id = l.id
+WHERE l.user_id = 789
+GROUP BY l.id
+ORDER BY l.created_at DESC;
 
-// Активність по оголошенням користувача
-db.events.aggregate([
-  {
-    $lookup: {
-      from: "listings",
-      localField: "listing_id",
-      foreignField: "_id",
-      as: "listing"
-    }
-  },
-  {
-    $match: {
-      "listing.user_id": ObjectId("507f1f77bcf86cd799439011")
-    }
-  },
-  {
-    $group: {
-      _id: "$listing_id",
-      total_events: { $sum: 1 },
-      views: {
-        $sum: { $cond: [{ $eq: ["$type", "view"] }, 1, 0] }
-      },
-      contacts: {
-        $sum: { $cond: [{ $eq: ["$type", "contact_click"] }, 1, 0] }
-      }
-    }
-  }
-])
+-- Активність по оголошенням користувача за останній місяць
+SELECT 
+    DATE_TRUNC('day', e.created_at) as date,
+    e.type,
+    COUNT(*) as count
+FROM events e
+JOIN listings l ON l.id = e.listing_id
+WHERE l.user_id = 789 
+  AND e.created_at >= NOW() - INTERVAL '30 days'
+GROUP BY DATE_TRUNC('day', e.created_at), e.type
+ORDER BY date DESC, e.type;
 ```
+
+## 🔄 Зв'язки між таблицями
+
+```
+users (1) ──→ (N) listings
+  │
+  └── (1) ──→ (N) images [imageable_type='user']
+
+listings (1) ──→ (N) events
+   │
+   └── (1) ──→ (N) images [imageable_type='listing']
+
+events (N) ──→ (1) listings
+events (N) ──→ (1) users [optional]
+```
+
+## 📝 Примітки
+
+1. **Поліморфна таблиця images** дозволяє зберігати зображення для різних типів сутностей (користувачі, оголошення) в одній таблиці
+2. **avatar_url в users** дублює URL з images таблиці для швидкого доступу
+3. **Тригери updated_at** автоматично оновлюють час модифікації записів
+4. **Каскадне видалення** забезпечує цілісність даних при видаленні користувачів або оголошень
+5. **JSONB payload** в events дозволяє зберігати додаткові дані про події в гнучкому форматі

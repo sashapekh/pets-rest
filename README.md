@@ -37,7 +37,7 @@ curl http://localhost:8080/healthz
 
 - **API**: http://localhost:8080
 - **MinIO Console**: http://localhost:9091 (minioadmin/minioadmin)
-- **MongoDB**: localhost:27017 (admin/password)
+- **PostgreSQL**: localhost:5432 (pets_user/pets_password)
 - **Redis**: localhost:6379
 
 ## 📂 Структура проекту
@@ -46,13 +46,14 @@ curl http://localhost:8080/healthz
 .
 ├── cmd/api/                 # Вхідна точка програми
 ├── internal/                # Внутрішня бізнес-логіка
-│   ├── listings/           # Управління оголошеннями
-│   ├── users/              # Аутентифікація користувачів
+│   ├── handlers/           # HTTP обробники
+│   ├── services/           # Бізнес-логіка сервісів
+│   ├── database/           # Моделі та репозиторії
+│   ├── auth/               # Аутентифікація та JWT
+│   ├── oauth/              # OAuth провайдери (Google)
+│   ├── fx/                 # Dependency Injection
 │   ├── storage/            # Інтеграція з S3/MinIO
-│   ├── pdf/                # Генерація PDF
-│   ├── qrcode/             # Генерація QR-кодів
-│   ├── config/             # Конфігурація
-│   └── database/           # Робота з базою даних
+│   └── config/             # Конфігурація
 ├── pkg/                    # Публічні пакети
 │   ├── middleware/         # HTTP middleware
 │   └── utils/              # Утиліти
@@ -70,7 +71,7 @@ curl http://localhost:8080/healthz
 
 1. Запустіть залежності:
 ```bash
-docker-compose up -d mongodb redis minio minio-init
+docker-compose up -d postgres redis minio minio-init
 ```
 
 2. Встановіть залежності Go:
@@ -93,8 +94,9 @@ go mod tidy
 ## 📋 API Endpoints
 
 ### Аутентифікація
-- `POST /auth/magic-link` - Відправка magic link
-- `POST /auth/magic-link/verify` - Верифікація magic link
+- `GET /auth/google` - Google OAuth вхід
+- `GET /auth/google/callback` - Google OAuth callback
+- `GET /api/v1/profile` - Профіль користувача (потребує авторизації)
 
 ### Оголошення
 - `GET /api/v1/listings` - Список оголошень
@@ -102,7 +104,8 @@ go mod tidy
 - `GET /api/v1/listings/{id}` - Отримання оголошення
 - `PUT /api/v1/listings/{id}` - Оновлення оголошення
 - `DELETE /api/v1/listings/{id}` - Видалення оголошення
-- `POST /api/v1/listings/{id}/images` - Завантаження фото
+- `GET /api/v1/listings/{id}/images` - Отримання зображень оголошення
+- `POST /api/v1/listings/{id}/images` - Додавання зображення
 - `POST /api/v1/listings/{id}/generate-pdf` - Генерація PDF
 
 ### Публічні сторінки
@@ -113,16 +116,19 @@ go mod tidy
 
 ## 🗃️ База даних
 
-Проект використовує MongoDB з наступними колекціями:
+Проект використовує PostgreSQL з наступними таблицями:
 
 - **users** - Користувачі системи
 - **listings** - Оголошення про тварин
 - **events** - Аналітичні події
+- **images** - Поліморфні зображення (користувачі, оголошення)
 
 ## 📦 Залежності
 
 - [Fiber v3](https://github.com/gofiber/fiber) - HTTP framework
-- [MongoDB Go Driver](https://github.com/mongodb/mongo-go-driver) - MongoDB драйвер
+- [PostgreSQL](https://www.postgresql.org/) + [sqlx](https://github.com/jmoiron/sqlx) - База даних
+- [golang-migrate](https://github.com/golang-migrate/migrate) - Міграції БД
+- [Uber FX](https://github.com/uber-go/fx) - Dependency Injection
 - [Redis Go Client](https://github.com/go-redis/redis) - Redis клієнт
 - [MinIO Go SDK](https://github.com/minio/minio-go) - S3-сумісний клієнт
 

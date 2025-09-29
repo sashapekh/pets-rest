@@ -1,8 +1,11 @@
 package database
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
+
+	"go.uber.org/fx"
 )
 
 // UserRepository handles user database operations
@@ -10,9 +13,14 @@ type UserRepository struct {
 	db *DB
 }
 
+type UserRepositoryDeps struct {
+	fx.In
+	DB *DB
+}
+
 // NewUserRepository creates a new user repository
-func NewUserRepository(db *DB) *UserRepository {
-	return &UserRepository{db: db}
+func NewUserRepository(deps UserRepositoryDeps) *UserRepository {
+	return &UserRepository{db: deps.DB}
 }
 
 // Create creates a new user
@@ -48,6 +56,11 @@ func (r *UserRepository) GetByEmail(email string) (*User, error) {
 
 	err := r.db.Get(user, query, email)
 	if err != nil {
+
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
