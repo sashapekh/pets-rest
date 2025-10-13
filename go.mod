@@ -12,7 +12,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/minio/minio-go v6.0.14+incompatible
 	go.uber.org/fx v1.24.0
-	golang.org/x/oauth2 v0.31.0
+	golang.org/x/oauth2 v0.32.0
 )
 
 require (
