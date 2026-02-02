@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
-	github.com/lib/pq v1.10.9
+	github.com/lib/pq v1.11.1
 	github.com/minio/minio-go v6.0.14+incompatible
 	go.uber.org/fx v1.24.0
 	golang.org/x/oauth2 v0.33.0
